@@ -1,41 +1,116 @@
 from tkinter import *
-
-window = Tk()
-window.title("전라남도 숙박 업소")
-window.geometry("600x360")
-
-frame0 = Frame(window)
-frame0.grid(row=0, column=0)
-Button(frame0, text="검색").pack(side="left")
-Button(frame0, text="북마크").pack(side="left")
-Label(frame0, width=40).pack(side="left")
-
-frame1 = Frame(window)
-frame1.grid(row=1, column=0)
-Label(frame1, text="    시").pack(side="left")
-locEntry = Entry(frame1, width=8)
-locEntry.pack(side="left")
-Label(frame1, text="    이름").pack(side="left")
-searchEntry = Entry(frame1, width=25)
-searchEntry.pack(side="left")
-Button(frame1, text="찾기").pack(side="left")
-
-frame2 = Frame(window)
-frame2.grid(row=2, column=0)
-frame3 = Frame(window)
-frame3.grid(row=2, column=1)
-
-Label(frame2).grid(row=0, column=0)
-for i in range(10):
-    Button(frame2, text="숙박업소"+str(i)).grid(row=i+1, column=0)
-    Button(frame2, text="★").grid(row=i+1, column=1)
-
-Label(frame3, text="숙박업소 사진").pack()
-Label(frame3, text="숙박업소 이름").pack()
-Label(frame3, text="분류(호텔/펜션/민박)").pack()
-Label(frame3, text="숙박업소 전화번호").pack()
-Label(frame3, text="숙박업소 위치").pack()
-Label(frame3, text="숙박업소 지도").pack()
-Button(frame3, text="Gmail").pack()
-
-window.mainloop()
+from tkinter import font
+import tkinter.messagebox
+g_Tk = Tk()
+g_Tk.geometry("400x600+750+200")
+DataList = []
+def InitTopText():
+    TempFont = font.Font(g_Tk, size=20, weight='bold', family = 'Consolas')
+    MainText = Label(g_Tk, font = TempFont, text="[termp]")
+    MainText.pack()
+    MainText.place(x=20)
+def InitSearchListBox():
+    global SearchListBox
+    ListBoxScrollbar = Scrollbar(g_Tk)
+    ListBoxScrollbar.pack()
+    ListBoxScrollbar.place(x=150, y=50)
+    TempFont = font.Font(g_Tk, size=15, weight='bold', family='Consolas')
+    SearchListBox = Listbox(g_Tk, font=TempFont, activestyle='none', width=10, height=1,
+                            borderwidth=12, relief='ridge',yscrollcommand=ListBoxScrollbar.set)
+    SearchListBox.insert(1, "L")
+    SearchListBox.insert(2, "F")
+    SearchListBox.insert(3, "M")
+    SearchListBox.insert(4, "C")
+    SearchListBox.pack()
+    SearchListBox.place(x=10, y=50)
+    ListBoxScrollbar.config(command=SearchListBox.yview)
+def InitInputLabel():
+    global InputLabel
+    TempFont = font.Font(g_Tk, size=15, weight='bold', family ='Consolas')
+    InputLabel = Entry(g_Tk, font =TempFont, width =26, borderwidth =12, relief ='ridge')
+    InputLabel.pack()
+    InputLabel.place(x=10, y =105)
+def InitSearchButton():
+    TempFont = font.Font(g_Tk, size=12, weight='bold', family = 'Consolas')
+    SearchButton = Button(g_Tk, font = TempFont, text="검색",  command=SearchButtonAction)
+    SearchButton.pack()
+    SearchButton.place(x=330, y=110)
+def SearchButtonAction():
+    global SearchListBox
+    RenderText.configure(state='normal')
+    RenderText.delete(0.0, END)
+    iSearchIndex = SearchListBox.curselection()[0]
+    if iSearchIndex == 0:
+        SearchLibrary()
+    elif iSearchIndex == 1:
+        pass
+    elif iSearchIndex == 2:
+        pass
+    elif iSearchIndex == 3:
+        pass#SearchCultural()
+    RenderText.configure(state='disabled')
+def SearchLibrary():
+    import http.client
+    from xml.dom.minidom import parse, parseString
+    conn = http.client.HTTPConnection("openAPI.seoul.go.kr:8088")
+    conn.request("GET", "/6b4f54647867696c3932474d68794c/xml/GeoInfoLibrary/1/800")
+    req = conn.getresponse()
+    global DataList
+    DataList.clear()
+    if req.status == 200:
+        BooksDoc = req.read().decode('utf-8')
+        if BooksDoc == None:
+            print("에러")
+        else:
+            parseData = parseString(BooksDoc)
+            GeoInfoLibrary = parseData.childNodes
+            row = GeoInfoLibrary[0].childNodes
+            for item in row:
+                if item.nodeName == "row":
+                    subitems = item.childNodes
+                    if subitems[3].firstChild.nodeValue == InputLabel.get():
+                        pass
+                    elif subitems[5].firstChild.nodeValue == InputLabel.get():
+                        pass
+                    else:
+                        continue
+                    if subitems[29].firstChild is not None:
+                        tel = str(subitems[29].firstChild.nodeValue)
+                        pass
+                        if tel[0] != '0':
+                            tel = "02-" + tel
+                            pass
+                        DataList.append((subitems[15].firstChild.nodeValue, subitems[13].firstChild.nodeValue, tel))
+                    else:
+                        DataList.append((subitems[15].firstChild.nodeValue, subitems[13].firstChild.nodeValue, "-"))
+            for i in range(len(DataList)):
+                RenderText.insert(INSERT, "[")
+                RenderText.insert(INSERT, i + 1)
+                RenderText.insert(INSERT, "] ")
+                RenderText.insert(INSERT, ": ")
+                RenderText.insert(INSERT, DataList[i][0])
+                RenderText.insert(INSERT, "\n")
+                RenderText.insert(INSERT, "주소: ")
+                RenderText.insert(INSERT, DataList[i][1])
+                RenderText.insert(INSERT, "\n")
+                RenderText.insert(INSERT, "전화번호: ")
+                RenderText.insert(INSERT, DataList[i][2])
+                RenderText.insert(INSERT, "\n\n")
+def InitRenderText():
+    global RenderText
+    RenderTextScrollbar = Scrollbar(g_Tk)
+    RenderTextScrollbar.pack()
+    RenderTextScrollbar.place(x=375, y=200)
+    TempFont = font.Font(g_Tk, size=10, family='Consolas')
+    RenderText = Text(g_Tk, width=49, height=27, borderwidth=12, relief='ridge', yscrollcommand=RenderTextScrollbar.set)
+    RenderText.pack()
+    RenderText.place(x=10, y=215)
+    RenderTextScrollbar.config(command=RenderText.yview)
+    RenderTextScrollbar.pack(side=RIGHT, fill=BOTH)
+    RenderText.configure(state='disabled')
+InitTopText()
+InitSearchListBox()
+InitInputLabel()
+InitSearchButton()
+InitRenderText()
+g_Tk.mainloop()
