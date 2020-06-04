@@ -1,109 +1,126 @@
 from tkinter import *
 from tkinter import font
 import tkinter.messagebox
-g_Tk = Tk()
-g_Tk.geometry("400x600+750+200")
+window = Tk()
+window.geometry("400x600+750+200")
 DataList = []
+loc = ""
+locList = ["검색", "천안", "공주", "보령", "아산", "서산", "논산", "당진", "금산", "부여", "서천", "청양", "홍성",\
+           "예산", "태안"]
 def InitTopText():
-    TempFont = font.Font(g_Tk, size=20, weight='bold', family = 'Consolas')
-    MainText = Label(g_Tk, font = TempFont, text="[termp]")
-    MainText.pack()
+    TempFont = font.Font(window, size=20, weight='bold', family='Consolas')
+    MainText = Label(window, font=TempFont, text="[충남 숙박업소 검색]")
     MainText.place(x=20)
 def InitSearchListBox():
     global SearchListBox
-    ListBoxScrollbar = Scrollbar(g_Tk)
-    ListBoxScrollbar.pack()
+    ListBoxScrollbar = Scrollbar(window)
     ListBoxScrollbar.place(x=150, y=50)
-    TempFont = font.Font(g_Tk, size=15, weight='bold', family='Consolas')
-    SearchListBox = Listbox(g_Tk, font=TempFont, activestyle='none', width=10, height=1,
-                            borderwidth=12, relief='ridge',yscrollcommand=ListBoxScrollbar.set)
-    SearchListBox.insert(1, "L")
-    SearchListBox.insert(2, "F")
-    SearchListBox.insert(3, "M")
-    SearchListBox.insert(4, "C")
-    SearchListBox.pack()
+    TempFont = font.Font(window, size=15, weight='bold', family='Consolas')
+    SearchListBox = Listbox(window, font=TempFont, activestyle='none', width=10, height=1,
+                            borderwidth=12, relief='ridge', yscrollcommand=ListBoxScrollbar.set)
+    SearchListBox.insert(0, "검색")
+    SearchListBox.insert(1, "천안")
+    SearchListBox.insert(2, "공주")
+    SearchListBox.insert(3, "보령")
+    SearchListBox.insert(4, "아산")
+    SearchListBox.insert(5, "서산")
+    SearchListBox.insert(6, "논산")
+    SearchListBox.insert(7, "당진")
+    SearchListBox.insert(8, "금산")
+    SearchListBox.insert(9, "부여")
+    SearchListBox.insert(10, "서천")
+    SearchListBox.insert(11, "청양")
+    SearchListBox.insert(12, "홍성")
+    SearchListBox.insert(13, "예산")
+    SearchListBox.insert(14, "태안")
     SearchListBox.place(x=10, y=50)
     ListBoxScrollbar.config(command=SearchListBox.yview)
 def InitInputLabel():
     global InputLabel
-    TempFont = font.Font(g_Tk, size=15, weight='bold', family ='Consolas')
-    InputLabel = Entry(g_Tk, font =TempFont, width =26, borderwidth =12, relief ='ridge')
-    InputLabel.pack()
-    InputLabel.place(x=10, y =105)
+    TempFont = font.Font(window, size=15, weight='bold', family='Consolas')
+    InputLabel = Entry(window, font=TempFont, width=26, borderwidth=12, relief='ridge')
+    InputLabel.place(x=10, y=105)
 def InitSearchButton():
-    TempFont = font.Font(g_Tk, size=12, weight='bold', family = 'Consolas')
-    SearchButton = Button(g_Tk, font = TempFont, text="검색",  command=SearchButtonAction)
-    SearchButton.pack()
+    TempFont = font.Font(window, size=12, weight='bold', family='Consolas')
+    SearchButton = Button(window, font=TempFont, text="검색", command=SearchButtonAction)
     SearchButton.place(x=330, y=110)
 def SearchButtonAction():
-    global SearchListBox
+    global SearchListBox, locList, loc
     RenderText.configure(state='normal')
     RenderText.delete(0.0, END)
     iSearchIndex = SearchListBox.curselection()[0]
-    if iSearchIndex == 0:
-        SearchLibrary()
-    elif iSearchIndex == 1:
-        pass
-    elif iSearchIndex == 2:
-        pass
-    elif iSearchIndex == 3:
-        pass#SearchCultural()
+    loc = locList[iSearchIndex]
+    Search()
     RenderText.configure(state='disabled')
-def SearchLibrary():
+def Search():
+    import urllib
     import http.client
     from xml.dom.minidom import parse, parseString
-    conn = http.client.HTTPConnection("openAPI.seoul.go.kr:8088")
-    conn.request("GET", "/6b4f54647867696c3932474d68794c/xml/GeoInfoLibrary/1/800")
+    from io import BytesIO
+    import urllib.request
+    from PIL import Image, ImageTk
+    conn = http.client.HTTPConnection("tour.chungnam.go.kr")
+    conn.request("GET", "/_prog/openapi/?func=stay&start=0&end=150")
     req = conn.getresponse()
-    global DataList
+    global DataList, loc
     DataList.clear()
     if req.status == 200:
         BooksDoc = req.read().decode('utf-8')
         if BooksDoc == None:
-            print("에러")
+            print("normal error")
         else:
             parseData = parseString(BooksDoc)
-            GeoInfoLibrary = parseData.childNodes
-            row = GeoInfoLibrary[0].childNodes
-            for item in row:
-                if item.nodeName == "row":
+            item_info = parseData.childNodes
+            row = item_info[0].childNodes
+            for item in row:              #row = <item>
+                if item.nodeName == "item":
                     subitems = item.childNodes
-                    if subitems[3].firstChild.nodeValue == InputLabel.get():
-                        pass
-                    elif subitems[5].firstChild.nodeValue == InputLabel.get():
-                        pass
-                    else:
-                        continue
-                    if subitems[29].firstChild is not None:
-                        tel = str(subitems[29].firstChild.nodeValue)
-                        pass
-                        if tel[0] != '0':
-                            tel = "02-" + tel
+                    if loc != "검색":
+                        if subitems[3].firstChild.nodeValue == loc:
                             pass
-                        DataList.append((subitems[15].firstChild.nodeValue, subitems[13].firstChild.nodeValue, tel))
+                        else:
+                            continue
+                        if subitems[17].firstChild is not None:
+                            tel = subitems[17].firstChild.nodeValue
+                        else:
+                            tel = "-"
+                        DataList.append((subitems[7].firstChild.nodeValue, subitems[5].firstChild.nodeValue, \
+                                         tel, subitems[11].firstChild.nodeValue))
                     else:
-                        DataList.append((subitems[15].firstChild.nodeValue, subitems[13].firstChild.nodeValue, "-"))
+                        if InputLabel.get() in subitems[7].firstChild.nodeValue:
+                            pass
+                        else:
+                            continue
+                        if subitems[17].firstChild is not None:
+                            tel = subitems[17].firstChild.nodeValue
+                        else:
+                            tel = "-"
+                        DataList.append((subitems[7].firstChild.nodeValue, subitems[5].firstChild.nodeValue, \
+                                         tel, subitems[11].firstChild.nodeValue))
             for i in range(len(DataList)):
                 RenderText.insert(INSERT, "[")
                 RenderText.insert(INSERT, i + 1)
                 RenderText.insert(INSERT, "] ")
-                RenderText.insert(INSERT, ": ")
+                RenderText.insert(INSERT, "시설명: ")
                 RenderText.insert(INSERT, DataList[i][0])
                 RenderText.insert(INSERT, "\n")
-                RenderText.insert(INSERT, "주소: ")
+                RenderText.insert(INSERT, "업소 분류: ")
                 RenderText.insert(INSERT, DataList[i][1])
                 RenderText.insert(INSERT, "\n")
                 RenderText.insert(INSERT, "전화번호: ")
                 RenderText.insert(INSERT, DataList[i][2])
+                RenderText.insert(INSERT, "\n")
+                RenderText.insert(INSERT, "주소: ")
+                RenderText.insert(INSERT, DataList[i][3])
                 RenderText.insert(INSERT, "\n\n")
+    else:
+        print("parsing error")
 def InitRenderText():
     global RenderText
-    RenderTextScrollbar = Scrollbar(g_Tk)
-    RenderTextScrollbar.pack()
+    RenderTextScrollbar = Scrollbar(window)
     RenderTextScrollbar.place(x=375, y=200)
-    TempFont = font.Font(g_Tk, size=10, family='Consolas')
-    RenderText = Text(g_Tk, width=49, height=27, borderwidth=12, relief='ridge', yscrollcommand=RenderTextScrollbar.set)
-    RenderText.pack()
+    TempFont = font.Font(window, size=10, family='Consolas')
+    RenderText = Text(window, width=49, height=27, borderwidth=12, relief='ridge', yscrollcommand=RenderTextScrollbar.set)
     RenderText.place(x=10, y=215)
     RenderTextScrollbar.config(command=RenderText.yview)
     RenderTextScrollbar.pack(side=RIGHT, fill=BOTH)
@@ -113,4 +130,4 @@ InitSearchListBox()
 InitInputLabel()
 InitSearchButton()
 InitRenderText()
-g_Tk.mainloop()
+window.mainloop()
