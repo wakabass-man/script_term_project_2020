@@ -8,39 +8,47 @@ import urllib.request
 from PIL import Image, ImageTk
 import folium
 import webbrowser
+import smtplib
+from email.mime.text import MIMEText
+import tkinter.messagebox
 
 window = Tk()
-window.geometry("1180x670")
-window.title("충남 숙박업소")
+window.geometry("1552x670+0+0")
+window.title("충남 관광지 숙박업소")
 window.resizable(False, False)
 
 locList = ["검색", "천안", "공주", "아산", "서산", "논산", "당진", "금산", "부여", "서천", "청양", "홍성",\
            "예산", "태안", "보령"]
 loc = ""
 dataList = []
+dataX = []
+bookmarkDataList = []
+buttonList = []
+idxX = 0
 def init():
-    global combobox, inputEntry, searchFrame, bookmarkFrame, \
-        subFrame, subFrame2, subFrame3, subFrame4, subFrame5, subFrame6
+    global combobox, inputEntry, searchFrame, bookmarkFrame, noPhotoLabel,\
+        subFrame, subFrame2, subFrame4, subFrame5, textFrame, imageFrame
 
-    notebook = tkinter.ttk.Notebook(window, width=1180, height=670)
+    notebook = tkinter.ttk.Notebook(window, width=1080, height=670)
     notebook.pack()
     searchFrame = Frame(window)
     notebook.add(searchFrame, text="검색")
     bookmarkFrame = Frame(window)
     notebook.add(bookmarkFrame, text="북마크")
 
-    subFrame = Frame(searchFrame)
+    textFrame = Frame(searchFrame)
+    textFrame.pack(side=LEFT)
+    imageFrame = Frame(searchFrame)
+    imageFrame.pack(side=LEFT)
+
+    subFrame = Frame(textFrame)
     subFrame.grid(row=0, column=0)
-    subFrame2 = Frame(searchFrame)
+    subFrame2 = Frame(textFrame)
     subFrame2.grid(row=0, column=1)
-    subFrame3 = Frame(searchFrame)
-    subFrame3.grid(row=0, column=2)
-    subFrame4 = Frame(searchFrame)
+    subFrame4 = Frame(textFrame)
     subFrame4.grid(row=1, column=0)
-    subFrame5 = Frame(searchFrame)
+    subFrame5 = Frame(textFrame)
     subFrame5.grid(row=1, column=1)
-    subFrame6 = Frame(searchFrame)
-    subFrame6.grid(row=1, column=2)
 
     combobox = tkinter.ttk.Combobox(subFrame, values=locList, width=44)
     combobox.pack()
@@ -48,8 +56,12 @@ def init():
 
     inputEntry = Entry(subFrame2, width=44)
     inputEntry.grid(row=0, column=0)
+
     click = Button(subFrame2, text="찾기", command=search)
     click.grid(row=0, column=1)
+
+    noPhotoLabel = Label(imageFrame, text="")
+    noPhotoLabel.grid(row=0, column=0)
 def search():
     global loc, locList, dataList
 
@@ -91,8 +103,8 @@ def search():
                             i = subitems[23].firstChild.nodeValue
                         else:
                             i = "-"
-                        dataList.append((subitems[7].firstChild.nodeValue, subitems[5].firstChild.nodeValue, \
-                                         tel, subitems[11].firstChild.nodeValue, desc, i, w, k))
+                        dataList.append([subitems[7].firstChild.nodeValue, subitems[5].firstChild.nodeValue, \
+                                         tel, subitems[11].firstChild.nodeValue, desc, i, w, k])
                     else:
                         if inputEntry.get() is not None and inputEntry.get() in subitems[7].firstChild.nodeValue:
                             pass
@@ -114,16 +126,19 @@ def search():
                             i = subitems[23].firstChild.nodeValue
                         else:
                             i = "-"
-                        dataList.append((subitems[7].firstChild.nodeValue, subitems[5].firstChild.nodeValue, \
-                                         tel, subitems[11].firstChild.nodeValue, desc, i, w, k))
+                        dataList.append([subitems[7].firstChild.nodeValue, subitems[5].firstChild.nodeValue, \
+                                         tel, subitems[11].firstChild.nodeValue, desc, i, w, k])
 
             for e in subFrame4.grid_slaves():
                 e.destroy()
+            buttonList.clear()
 
             Label(subFrame4, text="\n<검색 결과>\n").grid(row=0, column=0)
             for i in range(len(dataList)):
-                Button(subFrame4, text=dataList[i][0], bg="light gray", \
-                       command=lambda x=i: showDetail(x)).grid(row=i+1, column=0)
+                button = Button(subFrame4, text=dataList[i][0], bg="light gray", \
+                       command=lambda x=i: showDetail(x))
+                button.grid(row=i+1, column=0)
+                buttonList.append(button)
     else:
         print("parsing error")
 def initRenderText():
@@ -133,17 +148,48 @@ def initRenderText():
     RenderText.pack()
     RenderText.configure(state='disabled')
 
-    bookmarker = Button(subFrame5, text="북마크", command=search)
+    bookmarker = Button(subFrame5, text="북마크", command=setBookmark)
     bookmarker.pack(side=RIGHT)
-    gmailer = Button(subFrame5, text="G-mail", command=search)
+    gmailer = Button(subFrame5, text="G-mail", command=sendGMail)
     gmailer.pack(side=RIGHT)
-def Pressed(y):
-    map_osm = folium.Map(location=[y[0], y[1]], zoom_start=13)
-    folium.Marker([y[0], y[1]], popup='충남숙박업소').add_to(map_osm)
-    map_osm.save('osm.html')
-    webbrowser.open_new('osm.html')
+    mapper = Button(subFrame5, text="지도보기", command=Pressed)
+    mapper.pack(side=RIGHT)
+def Pressed():
+    map_osm = folium.Map(location=[dataX[6], dataX[7]], zoom_start=13)
+    folium.Marker([dataX[6], dataX[7]], popup=dataX[0]).add_to(map_osm)
+    map_osm.save("osm.html")
+    webbrowser.open_new("osm.html")
     mapStatus = ""
+def sendGMail():
+    #tkinter.messagebox.showinfo("메일발송 완료!", "메일발송 완료!")
+    s = smtplib.SMTP("smtp.gmail.com", 587)
+    s.starttls()
+    s.login("jojunhyeon414@gmail.com", "hdqpoawlyzvuitij")
+    tmp = "※업소 이름: "+dataX[0]+"\n\n"+"※업소 분류: "+dataX[1]+"\n\n"+"※전화번호: "+dataX[2]+"\n\n"\
+          +"※주소: "+dataX[3]+"\n\n"+"※설명: \n\n"+dataX[4]+"\n\n"+"※사진: "+dataX[5]+"\n\n"
+    msg = MIMEText(tmp)
+    msg["Subject"] = "숙박업소 검색 결과입니다."
+    s.sendmail("jojunhyeon414@gmail.com", "bbb2632@naver.com", msg.as_string())
+    s.quit()
+def setBookmark():
+    tkinter.messagebox.showinfo("북마크 완료!", "북마크 완료!")
+    bookmarkDataList.append(dataX)
+    buttonList[idxX]["bg"] = "yellow"
+def showImage(x):
+    for e in imageFrame.grid_slaves():
+        e.destroy()
+    try:
+        raw_data = urllib.request.urlopen(dataList[x][5]).read()
+        im = Image.open(BytesIO(raw_data))
+        imag = ImageTk.PhotoImage(im)
+        imageLabel = Label(imageFrame, image=imag, height=404, width=404)
+        imageLabel.image = imag
+        imageLabel.grid(row=1, column=0)
+    except:
+        noPhotoLabel.configure(text="사진을 제공하지 않는 숙박업소입니다.")
 def showDetail(x):
+    global dataX, idxX
+
     RenderText.configure(state='normal')
     RenderText.delete(0.0, END)
     RenderText.insert(INSERT, "※업소 이름: ")
@@ -165,28 +211,11 @@ def showDetail(x):
         RenderText.insert(INSERT, "@ 지도는 제공되지 않습니다.")
     RenderText.configure(state='disabled')
 
-    for e in subFrame3.pack_slaves():
-        e.destroy()
+    showImage(x)
 
-    mapButton = Button(subFrame3, text="지도보기", command=lambda y=(dataList[x][6], dataList[x][7]): Pressed(y))
-    mapButton.pack()
+    idxX = x
 
-    for e in subFrame6.pack_slaves():
-        e.destroy()
-
-    #url="http://tour.chungnam.go.kr/Upl/kr/stay/thm_54.jpg"
-    if dataList[x][5] != "-":
-        url = dataList[x][5]
-        #print(url)
-        with urllib.request.urlopen(url) as u:
-            raw_data = u.read()
-
-        im = Image.open(BytesIO(raw_data))
-        image = ImageTk.PhotoImage(im)
-        imLabel = Label(subFrame6, image=image, height=350, width=350)
-        imLabel.pack()
-    else:
-        pass
+    dataX = dataList[x]
 
 init()
 initRenderText()
