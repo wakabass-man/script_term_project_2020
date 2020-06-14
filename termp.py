@@ -26,11 +26,12 @@ loc = ""
 dataList = []
 dataX = []
 bookmarkDataList = []
+dataY = []
 buttonList = []
 idxX = 0
 def init():
-    global searchFrame, textFrameS, imageFrameS, subFrameS, subFrameS2, subFrameS3, subFrameS4, combobox, inputEntry, noPhotoLabel, \
-           bookmarkFrame, subFrameB, subFrameB2, subFrameB3
+    global searchFrame, textFrameS, imageFrameS, subFrameS, subFrameS2, subFrameS3, subFrameS4, comboboxS, inputEntryS, \
+           bookmarkFrame, textFrameB, imageFrameB, subFrameB, subFrameB2, subFrameB3, subFrameB4
 
     notebook = tkinter.ttk.Notebook(window, width=1080, height=670)
     notebook.pack()
@@ -54,27 +55,34 @@ def init():
     subFrameS4 = Frame(textFrameS)
     subFrameS4.grid(row=1, column=1)
 
-    combobox = tkinter.ttk.Combobox(subFrameS, values=locList, width=44)
-    combobox.pack()
-    combobox.set("지역 선택")
+    comboboxS = tkinter.ttk.Combobox(subFrameS, values=locList, width=44)
+    comboboxS.pack()
+    comboboxS.set("지역 선택")
 
-    inputEntry = Entry(subFrameS2, width=44)
-    inputEntry.grid(row=0, column=0)
+    inputEntryS = Entry(subFrameS2, width=44)
+    inputEntryS.grid(row=0, column=0)
 
-    click = Button(subFrameS2, text="찾기", command=search)
-    click.grid(row=0, column=1)
-
-    noPhotoLabel = Label(imageFrameS, text="")
-    noPhotoLabel.grid(row=0, column=0)
+    Button(subFrameS2, text="찾기", command=search).grid(row=0, column=1)
 
     ##########################################################################################
 
-    subFrameB = Frame(bookmarkFrame)
-    subFrameB.pack(side=LEFT)
-    subFrameB2 = Frame(bookmarkFrame)
-    subFrameB2.pack(side=LEFT)
-    subFrameB3 = Frame(bookmarkFrame)
-    subFrameB3.pack(side=LEFT)
+    textFrameB = Frame(bookmarkFrame)
+    textFrameB.pack(side=LEFT)
+    imageFrameB = Frame(bookmarkFrame)
+    imageFrameB.pack(side=LEFT)
+
+    subFrameB = Frame(textFrameB)
+    subFrameB.grid(row=0, column=0)
+    subFrameB2 = Frame(textFrameB)
+    subFrameB2.grid(row=0, column=1)
+    subFrameB3 = Frame(textFrameB)
+    subFrameB3.grid(row=1, column=0)
+    subFrameB4 = Frame(textFrameB)
+    subFrameB4.grid(row=1, column=1)
+
+    Label(subFrameB, text="북마크 목록", width=45).pack()
+
+    Label(subFrameB2, text="이미지", width=45).pack()
 def search():
     bookmarkerS["state"] = "disabled"
     gmailerS["state"] = "disabled"
@@ -82,7 +90,7 @@ def search():
 
     global loc, locList, dataList
 
-    loc = combobox.get()
+    loc = comboboxS.get()
 
     conn = http.client.HTTPConnection("tour.chungnam.go.kr")
     conn.request("GET", "/_prog/openapi/?func=stay&start=0&end=150")
@@ -123,7 +131,7 @@ def search():
                         dataList.append([subitems[7].firstChild.nodeValue, subitems[5].firstChild.nodeValue, \
                                          tel, subitems[11].firstChild.nodeValue, desc, i, w, k])
                     else:
-                        if inputEntry.get() is not None and inputEntry.get() in subitems[7].firstChild.nodeValue:
+                        if inputEntryS.get() is not None and inputEntryS.get() in subitems[7].firstChild.nodeValue:
                             pass
                         else:
                             continue
@@ -177,17 +185,17 @@ def initRenderText():
     mapperS = Button(subFrameS4, text="지도보기", command=Pressed)
     mapperS.pack(side=RIGHT)
 
-    RenderTextB = Text(subFrameB2, width=46, height=44, borderwidth=10, relief='ridge')
+    RenderTextB = Text(subFrameB4, width=46, height=44, borderwidth=10, relief='ridge')
     RenderTextB.pack()
     RenderTextB.configure(state='disabled')
 
-    bookmarkerB = Button(subFrameB2, text="북마크 해제", command=deleteBookmark)
+    bookmarkerB = Button(subFrameB4, text="북마크 해제", command=deleteBookmark)
     bookmarkerB.pack(side=RIGHT)
 
-    gmailerB = Button(subFrameB2, text="G-mail", command=sendGMail2)
+    gmailerB = Button(subFrameB4, text="G-mail", command=sendGMail2)
     gmailerB.pack(side=RIGHT)
 
-    mapperB = Button(subFrameB2, text="지도보기", command=Pressed2)
+    mapperB = Button(subFrameB4, text="지도보기", command=Pressed2)
     mapperB.pack(side=RIGHT)
 
     bookmarkerS["state"] = "disabled"
@@ -196,12 +204,21 @@ def initRenderText():
     bookmarkerB["state"] = "disabled"
     gmailerB["state"] = "disabled"
     mapperB["state"] = "disabled"
-def deleteBookmark():
-    pass
 def Pressed2():
-    pass
+    map_osm = folium.Map(location=[dataY[6], dataY[7]], zoom_start=13)
+    folium.Marker([dataY[6], dataY[7]], popup=dataY[0]).add_to(map_osm)
+    map_osm.save("osm.html")
+    webbrowser.open_new("osm.html")
 def sendGMail2():
-    pass
+    s = smtplib.SMTP("smtp.gmail.com", 587)
+    s.starttls()
+    s.login("jojunhyeon414@gmail.com", "hdqpoawlyzvuitij")
+    tmp = "※업소 이름: " + dataY[0] + "\n\n" + "※업소 분류: " + dataY[1] + "\n\n" + "※전화번호: " + dataY[2] + "\n\n" \
+          + "※주소: " + dataY[3] + "\n\n" + "※설명: \n\n" + dataY[4] + "\n\n" + "※사진: " + dataY[5] + "\n\n"
+    msg = MIMEText(tmp)
+    msg["Subject"] = "숙박업소 검색 결과입니다."
+    s.sendmail("jojunhyeon414@gmail.com", "bbb2632@naver.com", msg.as_string())
+    s.quit()
 def Pressed():
     map_osm = folium.Map(location=[dataX[6], dataX[7]], zoom_start=13)
     folium.Marker([dataX[6], dataX[7]], popup=dataX[0]).add_to(map_osm)
@@ -219,7 +236,47 @@ def sendGMail():
     msg["Subject"] = "숙박업소 검색 결과입니다."
     s.sendmail("jojunhyeon414@gmail.com", "bbb2632@naver.com", msg.as_string())
     s.quit()
+def setBookmark():
+    for e in subFrameB3.grid_slaves():
+        e.destroy()
+
+    for i in range(len(bookmarkDataList)):
+        Button(subFrameB3, text=bookmarkDataList[i][0], bg="yellow", command=lambda x=i: showDetail2(x)).grid(row=i, column=0)
+def saveBookmark():
+    file = open("bookmark.txt", "w")
+    for i in range(len(bookmarkDataList)):
+        s = "★".join(bookmarkDataList[i])
+        file.write(s)
+        file.write("\n♩\n")
+    file.close()
+def loadBookmark():
+    file = open("bookmark.txt", "r")
+    s = file.readlines()
+    ss = ""
+    for e in s:
+        if e == "♩\n" or e == "\n♩\n" or e == "\n♩" or e == "♩":
+            bookmarkDataList.append(list(ss.split("★")))
+            ss = ""
+            continue
+        ss += e
+    file.close()
+def deleteBookmark():
+    for e in bookmarkDataList:
+        if e[0] == dataY[0]:
+            bookmarkDataList.remove(dataY)
+            break
+    tkinter.messagebox.showinfo("북마크 해제!", "북마크 해제!")
+    setBookmark()
+    saveBookmark()
+def addBookmark():
+    tkinter.messagebox.showinfo("북마크 완료!", "북마크 완료!")
+    buttonList[idxX]["bg"] = "yellow"
+    bookmarkDataList.append(dataX)
+    saveBookmark()
+    setBookmark()
 def showDetail2(x):
+    global dataY
+
     bookmarkerB["state"] = "normal"
     gmailerB["state"] = "normal"
     mapperB["state"] = "normal"
@@ -245,49 +302,19 @@ def showDetail2(x):
         RenderTextB.insert(INSERT, "@ 지도는 제공되지 않습니다.")
     RenderTextS.configure(state='disabled')
 
-    for e in subFrameB3.grid_slaves():
+    for e in imageFrameB.grid_slaves():
         e.destroy()
 
     try:
         raw_data = urllib.request.urlopen(bookmarkDataList[x][5]).read()
         im = Image.open(BytesIO(raw_data))
         imag = ImageTk.PhotoImage(im)
-        imageLabel = Label(subFrameB3, image=imag, height=404, width=404)
+        imageLabel = Label(imageFrameB, image=imag, height=413, width=410)
         imageLabel.image = imag
         imageLabel.grid(row=1, column=0)
     except:
         pass
-def setBookmark():
-    for e in subFrameB.grid_slaves():
-        e.destroy()
-
-    Label(subFrameB, text="\n<검색 결과>\n").grid(row=0, column=0)
-    for i in range(len(bookmarkDataList)):
-        Button(subFrameB, text=bookmarkDataList[i][0], bg="yellow", command=lambda x=i: showDetail2(x)).grid(row=i+1, column=0)
-def saveBookmark():
-    file = open("bookmark.txt", "w")
-    for i in range(len(bookmarkDataList)):
-        s = "★".join(bookmarkDataList[i])
-        file.write(s)
-        file.write("\n♩\n")
-    file.close()
-def loadBookmark():
-    file = open("bookmark.txt", "r")
-    s = file.readlines()
-    ss = ""
-    for e in s:
-        if e == "♩\n" or e == "\n♩\n" or e == "\n♩" or e == "♩":
-            bookmarkDataList.append(list(ss.split("★")))
-            ss = ""
-            continue
-        ss += e
-    file.close()
-def addBookmark():
-    tkinter.messagebox.showinfo("북마크 완료!", "북마크 완료!")
-    buttonList[idxX]["bg"] = "yellow"
-    bookmarkDataList.append(dataX)
-    saveBookmark()
-    setBookmark()
+    dataY = bookmarkDataList[x]
 def showImage(x):
     for e in imageFrameS.grid_slaves():
         e.destroy()
@@ -300,7 +327,7 @@ def showImage(x):
         imageLabel.image = imag
         imageLabel.grid(row=1, column=0)
     except:
-        noPhotoLabel.configure(text="사진을 제공하지 않는 숙박업소입니다.")
+        pass
 def showDetail(x):
     global dataX, idxX
 
@@ -332,6 +359,7 @@ def showDetail(x):
     showImage(x)
 
     idxX = x
+    #색칠하려고
 
     dataX = dataList[x]
 
