@@ -14,7 +14,7 @@ import tkinter.messagebox
 import tkinter.font
 
 window = Tk()
-window.geometry("1552x670+0+0")
+window.geometry("1080x670+0+0")
 window.title("충남 관광지 숙박업소")
 window.resizable(False, False)
 
@@ -81,8 +81,14 @@ def init():
     subFrameB4.grid(row=1, column=1)
 
     Label(subFrameB, text="북마크 목록", width=45).pack()
+    Label(subFrameB2, text="    ", width=45).pack()
 
-    Label(subFrameB2, text="이미지", width=45).pack()
+    """
+    logoImg = ImageTk.PhotoImage(file="logo.gif")
+    logoLabelS = Label(imageFrameS, image=logoImg, height=300, width=390)
+    logoLabelS.image = logoImg
+    logoLabelS.grid(row=0, column=0)
+    """
 def search():
     bookmarkerS["state"] = "disabled"
     gmailerS["state"] = "disabled"
