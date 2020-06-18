@@ -18,8 +18,6 @@ window.geometry("1080x670+0+0")
 window.title("충남 관광지 숙박업소")
 window.resizable(False, False)
 
-myFont = tkinter.font.Font(family="맑은 고딕", size=20, slant="italic")
-
 locList = ["검색", "천안", "공주", "아산", "서산", "논산", "당진", "금산", "부여", "서천", "청양", "홍성", "예산", "태안", \
            "보령"]
 loc = ""
@@ -29,9 +27,11 @@ bookmarkDataList = []
 dataY = []
 buttonList = []
 idxX = 0
+
 def init():
     global searchFrame, textFrameS, imageFrameS, subFrameS, subFrameS2, subFrameS3, subFrameS4, comboboxS, inputEntryS, \
-           bookmarkFrame, textFrameB, imageFrameB, subFrameB, subFrameB2, subFrameB3, subFrameB4
+           bookmarkFrame, textFrameB, imageFrameB, subFrameB, subFrameB2, subFrameB3, subFrameB4, \
+           logoFrameS, logoFrameB, pictureFrameS, pictureFrameB
 
     notebook = tkinter.ttk.Notebook(window, width=1080, height=670)
     notebook.pack()
@@ -45,6 +45,11 @@ def init():
     textFrameS.pack(side=LEFT)
     imageFrameS = Frame(searchFrame)
     imageFrameS.pack(side=LEFT)
+
+    pictureFrameS = Frame(imageFrameS)
+    pictureFrameS.pack()
+    logoFrameS = Frame(imageFrameS)
+    logoFrameS.pack()
 
     subFrameS = Frame(textFrameS)
     subFrameS.grid(row=0, column=0)
@@ -71,6 +76,11 @@ def init():
     imageFrameB = Frame(bookmarkFrame)
     imageFrameB.pack(side=LEFT)
 
+    pictureFrameB = Frame(imageFrameB)
+    pictureFrameB.pack()
+    logoFrameB = Frame(imageFrameB)
+    logoFrameB.pack()
+
     subFrameB = Frame(textFrameB)
     subFrameB.grid(row=0, column=0)
     subFrameB2 = Frame(textFrameB)
@@ -80,15 +90,30 @@ def init():
     subFrameB4 = Frame(textFrameB)
     subFrameB4.grid(row=1, column=1)
 
-    Label(subFrameB, text="북마크 목록", width=45).pack()
-    Label(subFrameB2, text="    ", width=45).pack()
+    Label(subFrameB, text="< 북마크 목록 >", width=47, height=1).pack()
+    Label(subFrameB2, text="< 업소 설명 >", width=44, height=1).pack()
 
-    """
+    ###########################################################################################
+
     logoImg = ImageTk.PhotoImage(file="logo.gif")
-    logoLabelS = Label(imageFrameS, image=logoImg, height=300, width=390)
+
+    logoLabelS = Label(logoFrameS, image=logoImg, height=250, width=404)
     logoLabelS.image = logoImg
-    logoLabelS.grid(row=0, column=0)
-    """
+    logoLabelS.pack()
+
+    logoLabelB = Label(logoFrameB, image=logoImg, height=250, width=444)
+    logoLabelB.image = logoImg
+    logoLabelB.pack()
+
+    tmpImg = ImageTk.PhotoImage(file="tmp.gif")
+
+    pictureLabelS = Label(pictureFrameS, image=tmpImg, height=333, width=100)
+    pictureLabelS.image = tmpImg
+    pictureLabelS.pack()
+
+    pictureLabelB = Label(pictureFrameB, image=tmpImg, height=333, width=100)
+    pictureLabelB.image = tmpImg
+    pictureLabelB.pack()
 def search():
     bookmarkerS["state"] = "disabled"
     gmailerS["state"] = "disabled"
@@ -167,7 +192,7 @@ def search():
             Label(subFrameS3, text="\n<검색 결과>\n").grid(row=0, column=0)
             for i in range(len(dataList)):
                 button = Button(subFrameS3, text=dataList[i][0], bg="light gray", \
-                                command=lambda x=i: showDetail(x))
+                                command=lambda x=i: showDetail(x), width=46)
                 for j in range(len(bookmarkDataList)):
                     if dataList[i][0] in bookmarkDataList[j][0]:
                         button["bg"] = "yellow"
@@ -230,9 +255,7 @@ def Pressed():
     folium.Marker([dataX[6], dataX[7]], popup=dataX[0]).add_to(map_osm)
     map_osm.save("osm.html")
     webbrowser.open_new("osm.html")
-    mapStatus = ""
 def sendGMail():
-    #tkinter.messagebox.showinfo("메일발송 완료!", "메일발송 완료!")
     s = smtplib.SMTP("smtp.gmail.com", 587)
     s.starttls()
     s.login("jojunhyeon414@gmail.com", "hdqpoawlyzvuitij")
@@ -247,7 +270,7 @@ def setBookmark():
         e.destroy()
 
     for i in range(len(bookmarkDataList)):
-        Button(subFrameB3, text=bookmarkDataList[i][0], bg="yellow", command=lambda x=i: showDetail2(x)).grid(row=i, column=0)
+        Button(subFrameB3, text=bookmarkDataList[i][0], bg="yellow", width=46, command=lambda x=i: showDetail2(x)).grid(row=i, column=0)
 def saveBookmark():
     file = open("bookmark.txt", "w")
     for i in range(len(bookmarkDataList)):
@@ -308,30 +331,30 @@ def showDetail2(x):
         RenderTextB.insert(INSERT, "@ 지도는 제공되지 않습니다.")
     RenderTextS.configure(state='disabled')
 
-    for e in imageFrameB.grid_slaves():
+    for e in pictureFrameB.pack_slaves():
         e.destroy()
 
     try:
         raw_data = urllib.request.urlopen(bookmarkDataList[x][5]).read()
         im = Image.open(BytesIO(raw_data))
         imag = ImageTk.PhotoImage(im)
-        imageLabel = Label(imageFrameB, image=imag, height=413, width=410)
+        imageLabel = Label(pictureFrameB, image=imag, height=413, width=410)
         imageLabel.image = imag
-        imageLabel.grid(row=1, column=0)
+        imageLabel.pack()
     except:
         pass
     dataY = bookmarkDataList[x]
 def showImage(x):
-    for e in imageFrameS.grid_slaves():
+    for e in pictureFrameS.pack_slaves():
         e.destroy()
 
     try:
         raw_data = urllib.request.urlopen(dataList[x][5]).read()
         im = Image.open(BytesIO(raw_data))
         imag = ImageTk.PhotoImage(im)
-        imageLabel = Label(imageFrameS, image=imag, height=404, width=404)
+        imageLabel = Label(pictureFrameS, image=imag, height=404, width=404)
         imageLabel.image = imag
-        imageLabel.grid(row=1, column=0)
+        imageLabel.pack()
     except:
         pass
 def showDetail(x):
